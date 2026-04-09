@@ -1,0 +1,367 @@
+require('dotenv').config();
+const express = require('express');
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
+const Database = require('better-sqlite3');
+const qrcode = require('qrcode');
+const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+const fs = require('fs');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// CORS - allow all
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
+// ── DATABASE ──────────────────────────────────────────────────
+const dataDir = path.join(__dirname, 'data');
+const sessionsDir = path.join(__dirname, 'sessions');
+[dataDir, sessionsDir].forEach(d => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
+
+const db = new Database(path.join(dataDir, 'autoflow.db'));
+db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+  CREATE TABLE IF NOT EXISTS accounts (
+    id TEXT PRIMARY KEY, name TEXT NOT NULL, phone TEXT,
+    status TEXT DEFAULT 'disconnected', ai_model TEXT DEFAULT 'gemini',
+    gemini_key TEXT DEFAULT '', openai_key TEXT DEFAULT '',
+    system_prompt TEXT DEFAULT 'أنت مساعد ذكي ودود. رد بشكل مختصر ومفيد.',
+    bot_active INTEGER DEFAULT 1, blocked_numbers TEXT DEFAULT '[]',
+    resume_mode INTEGER DEFAULT 0, resume_minutes INTEGER DEFAULT 30,
+    created_at INTEGER DEFAULT (strftime('%s','now'))
+  );
+  CREATE TABLE IF NOT EXISTS conversations (
+    id TEXT PRIMARY KEY, account_id TEXT NOT NULL, chat_id TEXT NOT NULL,
+    contact_name TEXT, label TEXT DEFAULT 'none', last_message TEXT DEFAULT '',
+    last_time INTEGER DEFAULT 0, msg_count INTEGER DEFAULT 0,
+    UNIQUE(account_id, chat_id)
+  );
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, conv_id TEXT NOT NULL,
+    direction TEXT NOT NULL, body TEXT NOT NULL,
+    timestamp INTEGER DEFAULT (strftime('%s','now'))
+  );
+  CREATE TABLE IF NOT EXISTS knowledge (
+    id TEXT PRIMARY KEY, account_id TEXT NOT NULL, title TEXT NOT NULL,
+    content TEXT NOT NULL, created_at INTEGER DEFAULT (strftime('%s','now'))
+  );
+  CREATE TABLE IF NOT EXISTS stats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id TEXT NOT NULL,
+    date TEXT NOT NULL, msg_in INTEGER DEFAULT 0, msg_out INTEGER DEFAULT 0,
+    tokens INTEGER DEFAULT 0, UNIQUE(account_id, date)
+  );
+`);
+
+[['platform_name','AutoFlow'],['setup_done','0']].forEach(([k,v]) =>
+  db.prepare('INSERT OR IGNORE INTO settings (key,value) VALUES (?,?)').run(k,v)
+);
+
+// ── AI ENGINE ─────────────────────────────────────────────────
+const chatHistories = new Map();
+function getHistory(key) { return chatHistories.get(key) || []; }
+function addHistory(key, role, text) {
+  if (!chatHistories.has(key)) chatHistories.set(key, []);
+  const h = chatHistories.get(key);
+  h.push({ role, parts: [{ text }] });
+  if (h.length > 30) h.splice(0, h.length - 30);
+}
+
+async function getAIReply(account, chatId, userMsg, context = '') {
+  const histKey = `${account.id}_${chatId}`;
+  const sysPrompt = account.system_prompt + (context ? `\n\nمعلومات مرجعية:\n${context}` : '');
+  if (account.ai_model === 'openai' && account.openai_key) {
+    const openai = new OpenAI({ apiKey: account.openai_key });
+    const messages = [
+      { role: 'system', content: sysPrompt },
+      ...getHistory(histKey).map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.parts[0].text })),
+      { role: 'user', content: userMsg }
+    ];
+    const res = await openai.chat.completions.create({ model: 'gpt-4o-mini', messages, max_tokens: 800 });
+    const reply = res.choices[0].message.content;
+    addHistory(histKey, 'user', userMsg); addHistory(histKey, 'model', reply);
+    return { reply, tokens: res.usage?.total_tokens || 0 };
+  } else {
+    const apiKey = account.gemini_key || process.env.GEMINI_API_KEY || '';
+    if (!apiKey) throw new Error('Gemini API key not set');
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', systemInstruction: sysPrompt });
+    const chat = model.startChat({ history: getHistory(histKey) });
+    const result = await chat.sendMessage(userMsg);
+    const reply = result.response.text();
+    addHistory(histKey, 'user', userMsg); addHistory(histKey, 'model', reply);
+    return { reply, tokens: Math.ceil((sysPrompt.length + userMsg.length + reply.length) / 4) };
+  }
+}
+
+// ── WHATSAPP ENGINE ───────────────────────────────────────────
+const waClients = new Map(), pendingQRs = new Map(), humanOverrides = new Map();
+const waEvents = new (require('events'))();
+
+function getAccount(id) { return db.prepare('SELECT * FROM accounts WHERE id = ?').get(id); }
+function getKnowledgeContext(accountId) {
+  return db.prepare('SELECT content FROM knowledge WHERE account_id = ?').all(accountId).map(d => d.content).join('\n---\n');
+}
+function logMessage(accountId, chatId, contactName, direction, body) {
+  const convId = `${accountId}_${chatId}`.replace(/[^a-z0-9_]/gi, '_');
+  const existing = db.prepare('SELECT id FROM conversations WHERE account_id=? AND chat_id=?').get(accountId, chatId);
+  if (existing) {
+    db.prepare(`UPDATE conversations SET last_message=?, last_time=strftime('%s','now'), msg_count=msg_count+1 WHERE id=?`).run(body.substring(0,100), existing.id);
+    db.prepare('INSERT INTO messages (conv_id,direction,body) VALUES (?,?,?)').run(existing.id, direction, body);
+  } else {
+    db.prepare(`INSERT INTO conversations (id,account_id,chat_id,contact_name,last_message,last_time,msg_count) VALUES (?,?,?,?,?,strftime('%s','now'),1)`).run(convId, accountId, chatId, contactName||chatId, body.substring(0,100));
+    db.prepare('INSERT INTO messages (conv_id,direction,body) VALUES (?,?,?)').run(convId, direction, body);
+  }
+  const today = new Date().toISOString().split('T')[0];
+  db.prepare(`INSERT INTO stats (account_id,date,msg_in,msg_out) VALUES (?,?,?,?) ON CONFLICT(account_id,date) DO UPDATE SET msg_in=msg_in+excluded.msg_in,msg_out=msg_out+excluded.msg_out`).run(accountId, today, direction==='in'?1:0, direction==='out'?1:0);
+}
+
+function createWAClient(accountId) {
+  if (waClients.has(accountId)) return;
+  const account = getAccount(accountId);
+  if (!account) return;
+  console.log(`[WA] Initializing: ${account.name}`);
+  db.prepare('UPDATE accounts SET status=? WHERE id=?').run('connecting', accountId);
+  const waClient = new Client({
+    authStrategy: new LocalAuth({ clientId: accountId, dataPath: sessionsDir }),
+    puppeteer: { headless: true, args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--disable-accelerated-2d-canvas','--no-zygote','--disable-gpu'] }
+  });
+  waClient.on('qr', async (qr) => {
+    try { const qrDataUrl = await qrcode.toDataURL(qr); pendingQRs.set(accountId, qrDataUrl); waEvents.emit('update', { accountId, type: 'qr', qr: qrDataUrl }); } catch(e) {}
+  });
+  waClient.on('ready', () => {
+    pendingQRs.delete(accountId); db.prepare('UPDATE accounts SET status=? WHERE id=?').run('connected', accountId);
+    waEvents.emit('update', { accountId, type: 'connected' });
+  });
+  waClient.on('disconnected', () => {
+    db.prepare('UPDATE accounts SET status=? WHERE id=?').run('disconnected', accountId);
+    waClients.delete(accountId); waEvents.emit('update', { accountId, type: 'disconnected' });
+  });
+  waClient.on('message', async (msg) => {
+    if (msg.from.includes('@g.us') || msg.from === 'status@broadcast' || !msg.body?.trim()) return;
+    const acc = getAccount(accountId);
+    if (!acc || !acc.bot_active) return;
+    const chatId = msg.from, fromNum = chatId.replace('@c.us','').replace('@lid','');
+    let blocked = []; try { blocked = JSON.parse(acc.blocked_numbers||'[]'); } catch(e) {}
+    if (blocked.includes(fromNum)) return;
+    const ovKey = `${accountId}_${chatId}`;
+    if (humanOverrides.has(ovKey)) {
+      const elapsed = (Date.now() - humanOverrides.get(ovKey)) / 60000;
+      if (elapsed < (acc.resume_minutes||30)) { logMessage(accountId, chatId, fromNum, 'in', msg.body); return; }
+      humanOverrides.delete(ovKey);
+    }
+    logMessage(accountId, chatId, fromNum, 'in', msg.body);
+    try {
+      const { reply, tokens } = await getAIReply(acc, chatId, msg.body, getKnowledgeContext(accountId));
+      await waClient.sendMessage(chatId, reply);
+      logMessage(accountId, chatId, fromNum, 'out', reply);
+      db.prepare(`INSERT INTO stats (account_id,date,tokens) VALUES (?,?,?) ON CONFLICT(account_id,date) DO UPDATE SET tokens=tokens+excluded.tokens`).run(accountId, new Date().toISOString().split('T')[0], tokens);
+      waEvents.emit('update', { accountId, type: 'message', from: fromNum });
+    } catch(e) { console.error(`[AI Error]:`, e.message); }
+  });
+  waClient.initialize().catch(e => { console.error(`[WA Init Error]:`, e.message); db.prepare('UPDATE accounts SET status=? WHERE id=?').run('error', accountId); });
+  waClients.set(accountId, waClient);
+}
+
+async function disconnectAccount(accountId) {
+  const wac = waClients.get(accountId);
+  if (wac) { try { await wac.destroy(); } catch(e) {} waClients.delete(accountId); }
+  pendingQRs.delete(accountId);
+  db.prepare('UPDATE accounts SET status=? WHERE id=?').run('disconnected', accountId);
+}
+
+// ── API ROUTES ────────────────────────────────────────────────
+
+// Accounts
+app.get('/api/accounts', (req, res) => {
+  try {
+    const accounts = db.prepare('SELECT * FROM accounts ORDER BY created_at DESC').all();
+    res.json(accounts.map(a => ({
+      ...a,
+      blocked_numbers: JSON.parse(a.blocked_numbers||'[]'),
+      connected: waClients.has(a.id) && a.status === 'connected',
+      hasQR: pendingQRs.has(a.id),
+      qr: pendingQRs.get(a.id) || null
+    })));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/accounts', (req, res) => {
+  try {
+    const { name, ai_model, gemini_key, openai_key, system_prompt } = req.body;
+    if (!name) return res.status(400).json({ error: 'الاسم مطلوب' });
+    const id = uuidv4();
+    db.prepare('INSERT INTO accounts (id,name,ai_model,gemini_key,openai_key,system_prompt) VALUES (?,?,?,?,?,?)')
+      .run(id, name, ai_model||'gemini', gemini_key||'', openai_key||'', system_prompt||'أنت مساعد ذكي ودود. رد بالدارجة المغربية.');
+    res.json({ success: true, id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/accounts/:id', (req, res) => {
+  try {
+    const { name, ai_model, gemini_key, openai_key, system_prompt, bot_active, blocked_numbers, resume_mode, resume_minutes } = req.body;
+    db.prepare('UPDATE accounts SET name=?,ai_model=?,gemini_key=?,openai_key=?,system_prompt=?,bot_active=?,blocked_numbers=?,resume_mode=?,resume_minutes=? WHERE id=?')
+      .run(name, ai_model, gemini_key||'', openai_key||'', system_prompt, bot_active?1:0, JSON.stringify(blocked_numbers||[]), resume_mode?1:0, resume_minutes||30, req.params.id);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/accounts/:id', async (req, res) => {
+  try {
+    await disconnectAccount(req.params.id);
+    ['conversations','knowledge','stats'].forEach(t => db.prepare(`DELETE FROM ${t} WHERE account_id=?`).run(req.params.id));
+    db.prepare('DELETE FROM accounts WHERE id=?').run(req.params.id);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/accounts/:id/connect', (req, res) => {
+  try {
+    const account = getAccount(req.params.id);
+    if (!account) return res.status(404).json({ error: 'Not found' });
+    createWAClient(req.params.id);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/accounts/:id/disconnect', async (req, res) => {
+  try { await disconnectAccount(req.params.id); res.json({ success: true }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// SSE stream
+app.get('/api/accounts/:id/stream', (req, res) => {
+  const accountId = req.params.id;
+  res.setHeader('Content-Type','text/event-stream');
+  res.setHeader('Cache-Control','no-cache');
+  res.setHeader('Connection','keep-alive');
+  res.flushHeaders();
+  const send = (data) => { try { res.write(`data: ${JSON.stringify(data)}\n\n`); } catch(e) {} };
+  const acc = getAccount(accountId);
+  if (acc) { send({ type:'status', status:acc.status }); if (pendingQRs.has(accountId)) send({ type:'qr', qr:pendingQRs.get(accountId) }); }
+  const handler = (data) => { if (data.accountId===accountId) send(data); };
+  waEvents.on('update', handler);
+  req.on('close', () => { waEvents.off('update', handler); res.end(); });
+});
+
+app.post('/api/accounts/:id/send', async (req, res) => {
+  try {
+    const { to, message } = req.body;
+    const wac = waClients.get(req.params.id);
+    if (!wac) return res.status(400).json({ error: 'Not connected' });
+    const chatId = to.includes('@') ? to : `${to}@c.us`;
+    await wac.sendMessage(chatId, message);
+    logMessage(req.params.id, chatId, to, 'out', message);
+    humanOverrides.set(`${req.params.id}_${chatId}`, Date.now());
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/accounts/:id/test', async (req, res) => {
+  try {
+    const account = getAccount(req.params.id);
+    if (!account) return res.status(404).json({ error: 'Not found' });
+    const { reply } = await getAIReply(account, 'test_preview', req.body.message, getKnowledgeContext(req.params.id));
+    res.json({ reply });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Conversations
+app.get('/api/accounts/:id/conversations', (req, res) => {
+  try { res.json(db.prepare('SELECT * FROM conversations WHERE account_id=? ORDER BY last_time DESC').all(req.params.id)); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/conversations/:convId/messages', (req, res) => {
+  try { res.json(db.prepare('SELECT * FROM messages WHERE conv_id=? ORDER BY timestamp ASC LIMIT 100').all(req.params.convId)); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/conversations/:convId/label', (req, res) => {
+  try { db.prepare('UPDATE conversations SET label=? WHERE id=?').run(req.body.label, req.params.convId); res.json({ success: true }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Knowledge
+app.get('/api/accounts/:id/knowledge', (req, res) => {
+  try { res.json(db.prepare('SELECT id,title,created_at,length(content) as size FROM knowledge WHERE account_id=? ORDER BY created_at DESC').all(req.params.id)); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/accounts/:id/knowledge', (req, res) => {
+  try {
+    const { title, content } = req.body;
+    if (!title||!content) return res.status(400).json({ error: 'Required' });
+    const id = uuidv4();
+    db.prepare('INSERT INTO knowledge (id,account_id,title,content) VALUES (?,?,?,?)').run(id, req.params.id, title, content);
+    res.json({ success: true, id });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/knowledge/:id', (req, res) => {
+  try { db.prepare('DELETE FROM knowledge WHERE id=?').run(req.params.id); res.json({ success: true }); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Stats
+app.get('/api/stats', (req, res) => {
+  try {
+    res.json(db.prepare(`
+      SELECT
+        (SELECT COUNT(*) FROM accounts) as accounts,
+        (SELECT COUNT(*) FROM accounts WHERE status='connected') as connected,
+        (SELECT COUNT(*) FROM conversations) as conversations,
+        (SELECT COALESCE(SUM(msg_in+msg_out),0) FROM stats WHERE date >= date('now','-30 days')) as messages_month,
+        (SELECT COALESCE(SUM(tokens),0) FROM stats WHERE date >= date('now','-30 days')) as tokens_month
+    `).get());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/accounts/:id/stats', (req, res) => {
+  try { res.json(db.prepare(`SELECT date,msg_in,msg_out,tokens FROM stats WHERE account_id=? AND date >= date('now','-30 days') ORDER BY date`).all(req.params.id)); }
+  catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Settings
+app.get('/api/settings', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT key,value FROM settings').all();
+    const s = {}; rows.forEach(r => s[r.key]=r.value); res.json(s);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/settings', (req, res) => {
+  try {
+    const u = db.prepare('INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)');
+    Object.entries(req.body).forEach(([k,v]) => u.run(k, String(v)));
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── SERVE FRONTEND ────────────────────────────────────────────
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ── START ─────────────────────────────────────────────────────
+app.listen(PORT, async () => {
+  console.log(`\n🚀 AutoFlow running on http://localhost:${PORT}\n`);
+  const connected = db.prepare("SELECT id FROM accounts WHERE status NOT IN ('disconnected','error')").all();
+  for (const acc of connected) {
+    await new Promise(r => setTimeout(r, 2000));
+    createWAClient(acc.id);
+  }
+});

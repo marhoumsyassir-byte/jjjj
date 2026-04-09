@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoFlow — WhatsApp AI Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --c1: #1F6F5F;
+  --c2: #2FA084;
+  --c3: #6FCF97;
+  --c4: #EEEEEE;
+  --bg: #0d1f1c;
+  --bg2: #122420;
+  --bg3: #172e29;
+  --border: rgba(47,160,132,0.18);
+  --border2: rgba(47,160,132,0.35);
+  --text: #EEEEEE;
+  --muted: #7aada1;
+  --card: #122420;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--c1);border-radius:3px}
+
+/* LANDING */
+.landing{min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.land-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%, rgba(31,111,95,0.25) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(47,160,132,0.15) 0%, transparent 50%);pointer-events:none}
+.land-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(47,160,132,0.06) 1px, transparent 1px),linear-gradient(90deg, rgba(47,160,132,0.06) 1px, transparent 1px);background-size:60px 60px;pointer-events:none}
+.land-nav{padding:20px 48px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;border-bottom:1px solid var(--border)}
+.logo-mark{display:flex;align-items:center;gap:12px}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--c1),var(--c2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 24px rgba(47,160,132,0.4)}
+.logo-text{font-weight:900;font-size:22px;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--c3),var(--c4));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.land-hero{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:60px 24px;position:relative;z-index:2}
+.land-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(47,160,132,0.12);border:1px solid var(--border2);border-radius:100px;padding:6px 18px;font-size:12px;color:var(--c3);margin-bottom:32px;font-weight:600;letter-spacing:0.5px}
+.land-badge span{width:7px;height:7px;background:var(--c3);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.land-h1{font-size:clamp(36px,6vw,80px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:20px}
+.land-h1 .accent{background:linear-gradient(135deg,var(--c2),var(--c3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.land-sub{font-size:17px;color:var(--muted);max-width:540px;line-height:1.7;margin-bottom:44px;font-weight:400}
+.land-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:72px}
+.btn-land{display:inline-flex;align-items:center;gap:10px;padding:14px 32px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:'Cairo',sans-serif;transition:all 0.25s;text-decoration:none}
+.btn-land-primary{background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;box-shadow:0 8px 32px rgba(31,111,95,0.4)}
+.btn-land-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(31,111,95,0.5)}
+.btn-land-ghost{background:transparent;color:var(--c3);border:1.5px solid var(--border2)}
+.btn-land-ghost:hover{background:rgba(47,160,132,0.08);transform:translateY(-2px)}
+.land-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;max-width:960px;width:100%;margin:0 auto 60px}
+.feat-card{background:rgba(18,36,32,0.8);border:1px solid var(--border);border-radius:20px;padding:28px 24px;text-align:right;backdrop-filter:blur(12px);transition:all 0.3s}
+.feat-card:hover{border-color:var(--border2);transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,0.3)}
+.feat-icon{width:48px;height:48px;background:linear-gradient(135deg,rgba(31,111,95,0.3),rgba(47,160,132,0.2));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px}
+.feat-title{font-size:15px;font-weight:700;margin-bottom:8px;color:var(--c4)}
+.feat-desc{font-size:13px;color:var(--muted);line-height:1.6}
+.land-footer{padding:24px 48px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2}
+.land-footer-text{font-size:12px;color:var(--muted)}
+
+/* DASHBOARD APP */
+.sidebar{background:var(--bg2);border-left:1px solid var(--border);width:250px;min-height:100vh;position:fixed;right:0;top:0;z-index:10;display:flex;flex-direction:column;transition:transform 0.3s}
+.main{margin-right:250px;min-height:100vh;padding:28px 32px;background:var(--bg)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:12px;cursor:pointer;transition:all 0.2s;font-size:14px;color:var(--muted);margin:2px 8px}
+.nav-item:hover{background:rgba(47,160,132,0.08);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,rgba(31,111,95,0.4),rgba(47,160,132,0.25));color:var(--c3);font-weight:700;border:1px solid rgba(47,160,132,0.3)}
+.nav-item svg{width:17px;height:17px;flex-shrink:0}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px}
+.card-sm{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px}
+.card:hover{border-color:var(--border2)}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;font-family:'Cairo',sans-serif}
+.btn-primary{background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;box-shadow:0 4px 16px rgba(31,111,95,0.3)}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--border2);background:rgba(47,160,132,0.08)}
+.btn-danger{background:rgba(220,38,38,0.1);color:#fca5a5;border:1px solid rgba(220,38,38,0.3)}
+.btn-danger:hover{background:rgba(220,38,38,0.2)}
+.btn-success{background:rgba(47,160,132,0.15);color:var(--c3);border:1px solid var(--border2)}
+.btn-success:hover{background:rgba(47,160,132,0.25)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'Cairo',sans-serif;outline:none;transition:border 0.2s}
+.input:focus{border-color:var(--c2);box-shadow:0 0 0 3px rgba(47,160,132,0.1)}
+.input::placeholder{color:rgba(122,173,161,0.5)}
+textarea.input{resize:vertical;min-height:80px}
+.label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;letter-spacing:0.3px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.badge-green{background:rgba(47,160,132,0.15);color:var(--c3);border:1px solid var(--border2)}
+.badge-red{background:rgba(220,38,38,0.1);color:#fca5a5;border:1px solid rgba(220,38,38,0.3)}
+.badge-yellow{background:rgba(245,158,11,0.1);color:#fcd34d;border:1px solid rgba(245,158,11,0.3)}
+.badge-gray{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;position:relative;overflow:hidden;transition:all 0.3s}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-card::after{content:'';position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;border-radius:50%;opacity:0.08}
+.stat-card.c1::after{background:var(--c2)}
+.stat-card.c2::after{background:var(--c3)}
+.stat-card.c3::after{background:#a855f7}
+.stat-card.c4::after{background:#f59e0b}
+
+.page{display:none}
+.page.active{display:block;animation:fadeIn 0.3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:50;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:22px;padding:26px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--c1);border:1px solid var(--c2);color:#fff;padding:12px 24px;border-radius:14px;font-size:13px;z-index:200;display:none;animation:slideUp 0.3s ease;font-weight:600;box-shadow:0 8px 32px rgba(31,111,95,0.4)}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.chat-msg{padding:10px 14px;border-radius:14px;max-width:80%;font-size:13px;line-height:1.6;margin-bottom:8px}
+.chat-msg.out{background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff;margin-right:auto;border-radius:14px 14px 4px 14px}
+.chat-msg.in{background:var(--bg3);color:var(--text);margin-left:auto;border-radius:14px 14px 14px 4px;border:1px solid var(--border)}
+.conv-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.2s}
+.conv-item:hover{background:rgba(47,160,132,0.05)}
+.conv-item.active{background:rgba(47,160,132,0.1)}
+.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;background:linear-gradient(135deg,var(--c1),var(--c2));color:#fff}
+.switch{position:relative;width:44px;height:24px;cursor:pointer}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch-track{position:absolute;inset:0;background:var(--bg3);border-radius:24px;transition:0.3s;border:1px solid var(--border)}
+.switch input:checked+.switch-track{background:linear-gradient(135deg,var(--c1),var(--c2));border-color:var(--c2)}
+.switch-thumb{position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;right:3px;transition:0.3s}
+.switch input:checked~.switch-thumb{right:23px}
+.qr-wrapper{background:#fff;padding:16px;border-radius:18px;display:inline-block;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+.qr-wrapper img{display:block;width:200px;height:200px}
+.section-title{font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:-0.5px}
+.section-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+.tag-hot{background:rgba(239,68,68,0.12);color:#fca5a5;border:1px solid rgba(239,68,68,0.3)}
+.tag-warm{background:rgba(245,158,11,0.12);color:#fcd34d;border:1px solid rgba(245,158,11,0.3)}
+.tag-cold{background:rgba(99,102,241,0.12);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)}
+.tag-none{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+.glow-dot{width:8px;height:8px;border-radius:50%;background:var(--c3);box-shadow:0 0 8px var(--c3);animation:pulse 2s infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700}
+@media(max-width:768px){
+  .sidebar{transform:translateX(100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-right:0;padding:20px 16px}
+  .land-nav{padding:16px 20px}
+  .land-footer{padding:16px 20px;flex-direction:column;gap:8px;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- LANDING PAGE -->
+<div id="landing">
+  <div class="landing">
+    <div class="land-bg"></div>
+    <div class="land-grid"></div>
+
+    <!-- NAV -->
+    <nav class="land-nav">
+      <div class="logo-mark">
+        <div class="logo-icon">⚡</div>
+        <div class="logo-text">AutoFlow</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <span style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace">v2.0</span>
+        <button class="btn-land btn-land-primary" onclick="showDashboard()" style="padding:10px 24px;font-size:14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          الداشبورد
+        </button>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="land-hero">
+      <div class="land-badge">
+        <span></span>
+        منصة واتساب AI متكاملة — بدون وسيط
+      </div>
+      <h1 class="land-h1">
+        أتمتة <span class="accent">واتساب</span><br>
+        بقوة الذكاء الاصطناعي
+      </h1>
+      <p class="land-sub">
+        ربط واتساب مباشر بـ QR، دعم Gemini و OpenAI، إدارة عدة حسابات في آن واحد، قاعدة معرفة ذكية — كل شيء في منصة واحدة.
+      </p>
+      <div class="land-cta">
+        <button class="btn-land btn-land-primary" onclick="showDashboard()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          ابدأ الآن مجاناً
+        </button>
+        <a href="#features" class="btn-land btn-land-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          اكتشف المزايا
+        </a>
+      </div>
+
+      <!-- FEATURES -->
+      <div class="land-features" id="features">
+        <div class="feat-card">
+          <div class="feat-icon">📱</div>
+          <div class="feat-title">ربط QR مباشر</div>
+          <div class="feat-desc">امسح رمز QR من الداشبورد مباشرة لربط واتساب في ثوانٍ</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">🤖</div>
+          <div class="feat-title">Gemini + OpenAI</div>
+          <div class="feat-desc">اختر بين Gemini 1.5 Flash أو GPT-4o لكل حساب على حدة</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">🔢</div>
+          <div class="feat-title">عدة حسابات</div>
+          <div class="feat-desc">أدر حسابات واتساب متعددة في نفس الوقت من مكان واحد</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📚</div>
+          <div class="feat-title">قاعدة معرفة</div>
+          <div class="feat-desc">أضف ملفات مرجعية لكل حساب ليرد البوت باحترافية</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">🏷️</div>
+          <div class="feat-title">Labels ذكية</div>
+          <div class="feat-desc">صنّف المحادثات بـ Hot / Warm / Cold وتابعها بسهولة</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📊</div>
+          <div class="feat-title">إحصائيات حية</div>
+          <div class="feat-desc">رسوم بيانية لمتابعة الرسائل والتوكن والأداء اليومي</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="land-footer">
+      <div class="land-footer-text">AutoFlow © 2025 — WhatsApp AI Platform</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="glow-dot"></div>
+        <span style="font-size:12px;color:var(--c3);font-weight:600">جاهز للاستخدام</span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- DASHBOARD APP -->
+<div id="app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div style="padding:20px 16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;background:linear-gradient(135deg,var(--c1),var(--c2));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(31,111,95,0.4)">⚡</div>
+        <div>
+          <div style="font-weight:900;font-size:17px;color:var(--text);letter-spacing:-0.5px">AutoFlow</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace">WhatsApp AI</div>
+        </div>
+      </div>
+    </div>
+
+    <nav style="flex:1;padding:12px 0;overflow-y:auto">
+      <div class="nav-item active" onclick="navigate('dashboard')" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        الرئيسية
+      </div>
+      <div class="nav-item" onclick="navigate('accounts')" data-page="accounts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.62 3.39 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.81A16 16 0 0 0 16 16.94"/></svg>
+        الحسابات
+        <span id="accounts-badge" style="margin-right:auto;background:var(--c1);color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="navigate('conversations')" data-page="conversations">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        المحادثات
+      </div>
+      <div class="nav-item" onclick="navigate('knowledge')" data-page="knowledge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        قاعدة المعرفة
+      </div>
+      <div class="nav-item" onclick="navigate('analytics')" data-page="analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        الإحصائيات
+      </div>
+      <div class="nav-item" onclick="navigate('settings')" data-page="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        الإعدادات
+      </div>
+    </nav>
+
+    <div style="padding:16px;border-top:1px solid var(--border)">
+      <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center" onclick="goLanding()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        الصفحة الرئيسية
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="page active">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+        <div>
+          <div class="section-title">لوحة التحكم</div>
+          <div class="section-sub">نظرة عامة على المنصة</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(47,160,132,0.1);border:1px solid var(--border2);border-radius:100px;padding:6px 16px">
+          <div class="glow-dot"></div>
+          <span style="font-size:12px;color:var(--c3);font-weight:600">نشط</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:28px">
+        <div class="stat-card c1">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">الحسابات</div>
+            <div style="width:36px;height:36px;background:rgba(47,160,132,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">📱</div>
+          </div>
+          <div style="font-size:36px;font-weight:900;color:var(--c3);font-family:'Space Mono',monospace" id="stat-accounts">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">إجمالي الحسابات</div>
+        </div>
+        <div class="stat-card c2">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">متصل</div>
+            <div style="width:36px;height:36px;background:rgba(111,207,151,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">🟢</div>
+          </div>
+          <div style="font-size:36px;font-weight:900;color:#6FCF97;font-family:'Space Mono',monospace" id="stat-connected">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">واتساب نشط</div>
+        </div>
+        <div class="stat-card c3">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">المحادثات</div>
+            <div style="width:36px;height:36px;background:rgba(168,85,247,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">💬</div>
+          </div>
+          <div style="font-size:36px;font-weight:900;color:#c4b5fd;font-family:'Space Mono',monospace" id="stat-conversations">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">إجمالي المحادثات</div>
+        </div>
+        <div class="stat-card c4">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">الرسائل</div>
+            <div style="width:36px;height:36px;background:rgba(245,158,11,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">✉️</div>
+          </div>
+          <div style="font-size:36px;font-weight:900;color:#fcd34d;font-family:'Space Mono',monospace" id="stat-messages">0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">هذا الشهر</div>
+        </div>
+      </div>
+
+      <div id="dashboard-accounts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
+    </div>
+
+    <!-- ACCOUNTS PAGE -->
+    <div id="page-accounts" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+        <div>
+          <div class="section-title">الحسابات</div>
+          <div class="section-sub">إدارة حسابات واتساب</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddAccount()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          حساب جديد
+        </button>
+      </div>
+      <div id="accounts-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px"></div>
+    </div>
+
+    <!-- CONVERSATIONS PAGE -->
+    <div id="page-conversations" class="page">
+      <div class="section-title">المحادثات</div>
+      <div class="section-sub">عرض وإدارة المحادثات</div>
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:16px;height:calc(100vh - 180px)">
+        <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:14px;border-bottom:1px solid var(--border)">
+            <select id="conv-account-filter" class="input" onchange="loadConversations()" style="font-size:13px">
+              <option value="">-- اختر الحساب --</option>
+            </select>
+          </div>
+          <div id="conv-list" style="flex:1;overflow-y:auto">
+            <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">اختر حساباً لعرض المحادثات</div>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+          <div id="conv-header" style="display:none;padding:14px 16px;border-bottom:1px solid var(--border);align-items:center;gap:12px">
+            <div class="avatar" id="conv-avatar" style="width:36px;height:36px;font-size:14px"></div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:14px" id="conv-name"></div>
+              <div style="font-size:11px;color:var(--muted)" id="conv-phone"></div>
+            </div>
+            <select id="conv-label" class="input" style="width:120px;font-size:12px" onchange="updateConvLabel()">
+              <option value="none">— بدون —</option>
+              <option value="hot">🔥 Hot</option>
+              <option value="warm">⚡ Warm</option>
+              <option value="cold">❄️ Cold</option>
+            </select>
+          </div>
+          <div id="conv-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:4px">
+            <div style="text-align:center;color:var(--muted);margin:auto;font-size:13px">اختر محادثة</div>
+          </div>
+          <div id="conv-input" style="display:none;padding:14px;border-top:1px solid var(--border);display:flex;gap:8px">
+            <input type="text" id="manual-msg" class="input" placeholder="اكتب رسالة يدوية..." onkeypress="if(event.key==='Enter')sendManual()">
+            <button class="btn btn-primary btn-sm" onclick="sendManual()">إرسال</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KNOWLEDGE PAGE -->
+    <div id="page-knowledge" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+        <div>
+          <div class="section-title">قاعدة المعرفة</div>
+          <div class="section-sub">ملفات مرجعية لكل حساب</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddKnowledge()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          إضافة ملف
+        </button>
+      </div>
+      <div style="margin-bottom:16px">
+        <select id="kb-account-filter" class="input" style="max-width:320px" onchange="loadKnowledge()">
+          <option value="">-- اختر الحساب --</option>
+        </select>
+      </div>
+      <div id="knowledge-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px"></div>
+    </div>
+
+    <!-- ANALYTICS PAGE -->
+    <div id="page-analytics" class="page">
+      <div class="section-title">الإحصائيات</div>
+      <div class="section-sub">تحليل الأداء والرسائل</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">
+        <select id="analytics-account" class="input" style="max-width:280px" onchange="loadAnalytics()">
+          <option value="">-- اختر الحساب --</option>
+        </select>
+      </div>
+      <div id="analytics-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px"></div>
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--c3)">الرسائل — آخر 30 يوم</div>
+        <canvas id="messages-chart" style="max-height:280px"></canvas>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" class="page">
+      <div class="section-title">الإعدادات</div>
+      <div class="section-sub">إعدادات المنصة ومفاتيح API</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+        <div class="card">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--c3)">🔑 مفاتيح API الافتراضية</div>
+          <div style="margin-bottom:14px">
+            <label class="label">Gemini API Key (افتراضي)</label>
+            <input type="password" id="default-gemini" class="input" placeholder="AIza...">
+          </div>
+          <div style="margin-bottom:20px">
+            <label class="label">OpenAI API Key (افتراضي)</label>
+            <input type="password" id="default-openai" class="input" placeholder="sk-...">
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()">حفظ المفاتيح</button>
+        </div>
+        <div class="card">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--c3)">ℹ️ معلومات المنصة</div>
+          <div style="background:var(--bg3);border-radius:12px;padding:16px;margin-bottom:12px">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">الإصدار</div>
+            <div style="font-size:14px;font-weight:700;font-family:'Space Mono',monospace;color:var(--c3)">AutoFlow v2.0</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:12px;padding:16px">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">المحركات المدعومة</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <span class="chip badge-green">✨ Gemini 1.5 Flash</span>
+              <span class="chip" style="background:rgba(99,102,241,0.12);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)">🤖 GPT-4o Mini</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL: Add/Edit Account -->
+<div class="modal-overlay" id="account-modal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div style="font-size:18px;font-weight:800" id="account-modal-title">حساب جديد</div>
+      <button onclick="closeModal('account-modal')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:24px;line-height:1">×</button>
+    </div>
+    <input type="hidden" id="account-id">
+    <div style="margin-bottom:14px">
+      <label class="label">اسم الحساب</label>
+      <input type="text" id="acc-name" class="input" placeholder="مثال: بوت المبيعات">
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="label">محرك الذكاء الاصطناعي</label>
+      <select id="acc-model" class="input">
+        <option value="gemini">✨ Gemini 1.5 Flash</option>
+        <option value="openai">🤖 GPT-4o Mini</option>
+      </select>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="label">Gemini API Key</label>
+      <input type="password" id="acc-gemini" class="input" placeholder="AIza... (اتركه فارغاً لاستخدام الافتراضي)">
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="label">OpenAI API Key</label>
+      <input type="password" id="acc-openai" class="input" placeholder="sk-... (اتركه فارغاً لاستخدام الافتراضي)">
+    </div>
+    <div style="margin-bottom:20px">
+      <label class="label">System Prompt</label>
+      <textarea id="acc-prompt" class="input" rows="4" placeholder="أنت مساعد ذكي..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('account-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveAccount()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: QR Code -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal" style="text-align:center">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div style="font-size:17px;font-weight:800" id="qr-title">ربط واتساب</div>
+      <button onclick="closeQRModal()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:24px">×</button>
+    </div>
+    <div id="qr-loading">
+      <div style="width:200px;height:200px;background:var(--bg3);border-radius:18px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center">
+        <div style="width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--c2);border-radius:50%;animation:spin 0.8s linear infinite"></div>
+      </div>
+      <div style="font-size:13px;color:var(--muted)">جاري توليد الكود...</div>
+    </div>
+    <div id="qr-display" style="display:none">
+      <div class="qr-wrapper" style="margin:0 auto 16px">
+        <img id="qr-img" width="200" height="200">
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--c3);margin-bottom:8px">امسح هذا الكود من واتساب</div>
+      <div style="font-size:12px;color:var(--muted)">الإعدادات ← الأجهزة المرتبطة ← ربط جهاز</div>
+    </div>
+    <div id="qr-success" style="display:none">
+      <div style="font-size:64px;margin-bottom:12px">✅</div>
+      <div style="font-size:16px;font-weight:800;color:var(--c3)">تم الاتصال بنجاح!</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Bot Settings -->
+<div class="modal-overlay" id="bot-modal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div style="font-size:17px;font-weight:800" id="bot-modal-title">إعدادات البوت</div>
+      <button onclick="closeModal('bot-modal')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:24px">×</button>
+    </div>
+    <input type="hidden" id="bot-account-id">
+    <div class="card-sm" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:14px;font-weight:700">تفعيل البوت</div>
+          <div style="font-size:11px;color:var(--muted)">يرد البوت تلقائياً</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="bot-active">
+          <div class="switch-track"></div>
+          <div class="switch-thumb"></div>
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:14px;font-weight:700">Resume Mode</div>
+          <div style="font-size:11px;color:var(--muted)">يستأنف بعد تدخل يدوي</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="bot-resume">
+          <div class="switch-track"></div>
+          <div class="switch-thumb"></div>
+        </label>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="label">دقائق الاستئناف</label>
+      <input type="number" id="bot-resume-min" class="input" value="30">
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="label">System Prompt</label>
+      <textarea id="bot-prompt" class="input" rows="5"></textarea>
+    </div>
+    <div style="margin-bottom:16px">
+      <label class="label">أرقام محظورة (سطر لكل رقم)</label>
+      <textarea id="bot-blocked" class="input" rows="3" placeholder="212600000001"></textarea>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--c3)">🧪 تجربة البوت</div>
+      <div id="preview-chat" style="height:160px;overflow-y:auto;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column-reverse;border:1px solid var(--border)">
+        <div style="text-align:center;color:var(--muted);font-size:13px;margin:auto">اكتب رسالة للتجربة</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="preview-msg" class="input" placeholder="اكتب رسالة..." onkeypress="if(event.key==='Enter')sendPreview()">
+        <button class="btn btn-success btn-sm" onclick="sendPreview()">تجربة</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('bot-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveBotSettings()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Knowledge -->
+<div class="modal-overlay" id="knowledge-modal">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div style="font-size:17px;font-weight:800">إضافة ملف معرفة</div>
+      <button onclick="closeModal('knowledge-modal')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:24px">×</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="label">الحساب</label>
+      <select id="kb-account-sel" class="input"></select>
+    </div>
+    <div style="margin-bottom:14px">
+      <label class="label">العنوان</label>
+      <input type="text" id="kb-title" class="input" placeholder="أسئلة شائعة">
+    </div>
+    <div style="margin-bottom:20px">
+      <label class="label">المحتوى</label>
+      <textarea id="kb-content" class="input" rows="8" placeholder="أضف المعلومات هنا..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeModal('knowledge-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveKnowledge()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allAccounts = [];
+let currentConvId = null, currentConvAccountId = null;
+let qrEventSource = null, messagesChart = null;
+
+// NAVIGATION
+function showDashboard() {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadAll();
+}
+function goLanding() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('landing').style.display = 'block';
+}
+
+// API
+async function api(url, opts = {}) {
+  try {
+    const headers = { ...opts.headers };
+    if (opts.body) headers['Content-Type'] = 'application/json';
+    const r = await fetch(url, { ...opts, headers });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+      showToast('خطأ: ' + (err.error || r.status));
+      return err;
+    }
+    return r.json();
+  } catch(e) {
+    showToast('خطأ في الاتصال بالسيرفر');
+    console.error('API error:', e);
+    return {};
+  }
+}
+
+// NAV
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  if (page === 'conversations') populateConvFilter();
+  if (page === 'knowledge') { populateKBFilter(); loadKnowledge(); }
+  if (page === 'analytics') populateAnalyticsFilter();
+  if (page === 'settings') loadSettings();
+}
+
+let statsInterval = null;
+async function loadAll() {
+  await loadAccounts();
+  loadStats();
+  if (statsInterval) clearInterval(statsInterval);
+  statsInterval = setInterval(loadStats, 15000);
+}
+
+async function loadStats() {
+  const s = await api('/api/stats');
+  document.getElementById('stat-accounts').textContent = s.accounts||0;
+  document.getElementById('stat-connected').textContent = s.connected||0;
+  document.getElementById('stat-conversations').textContent = s.conversations||0;
+  document.getElementById('stat-messages').textContent = (s.messages_month||0).toLocaleString();
+}
+
+// ACCOUNTS
+async function loadAccounts() {
+  allAccounts = await api('/api/accounts');
+  const badge = document.getElementById('accounts-badge');
+  badge.textContent = allAccounts.length;
+  badge.style.display = allAccounts.length > 0 ? 'block' : 'none';
+  renderAccounts(); renderDashboardAccounts();
+}
+
+function renderAccounts() {
+  const container = document.getElementById('accounts-list');
+  if (allAccounts.length === 0) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)"><div style="font-size:52px;margin-bottom:14px">📱</div><div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px">لا يوجد حسابات بعد</div><div style="font-size:13px">أضف حسابك الأول للبدء!</div></div>';
+    return;
+  }
+  container.innerHTML = allAccounts.map(acc => `
+    <div class="card" style="transition:all 0.3s">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div class="avatar" style="width:46px;height:46px;font-size:20px;background:${acc.connected ? 'linear-gradient(135deg,var(--c1),var(--c2))' : 'var(--bg3)'}">
+          ${acc.name[0]}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${acc.name}</div>
+          <div style="font-size:12px;color:var(--muted)">${acc.ai_model === 'openai' ? '🤖 GPT-4o Mini' : '✨ Gemini 1.5'}</div>
+        </div>
+        <span class="badge ${acc.connected ? 'badge-green' : acc.status === 'connecting' ? 'badge-yellow' : 'badge-gray'}">
+          ${acc.connected ? '● متصل' : acc.status === 'connecting' ? '⟳ يتصل' : '○ منفصل'}
+        </span>
+      </div>
+      ${acc.hasQR ? `
+        <div style="text-align:center;margin-bottom:14px;background:var(--bg3);border-radius:14px;padding:16px;border:1px solid var(--border2)">
+          <div style="font-size:12px;color:var(--c3);margin-bottom:10px;font-weight:600">📷 امسح الكود لربط الواتساب</div>
+          <div class="qr-wrapper" style="margin:0 auto;width:fit-content"><img src="${acc.qr}" width="160" height="160"></div>
+        </div>
+      ` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${acc.connected
+          ? `<button class="btn btn-danger btn-sm" onclick="disconnectAccount('${acc.id}')">قطع</button>`
+          : `<button class="btn btn-success btn-sm" onclick="connectAccount('${acc.id}','${acc.name}')">🔗 ربط</button>`}
+        <button class="btn btn-secondary btn-sm" onclick="openBotSettings('${acc.id}')">⚙️ البوت</button>
+        <button class="btn btn-secondary btn-sm" onclick="openEditAccount('${acc.id}')">تعديل</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteAccount('${acc.id}')">حذف</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDashboardAccounts() {
+  const container = document.getElementById('dashboard-accounts');
+  if (allAccounts.length === 0) {
+    container.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center;padding:52px;border:2px dashed var(--border2)">
+      <div style="font-size:52px;margin-bottom:14px">🚀</div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:8px">ابدأ الآن</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:22px">أضف حسابك الأول وربط واتساب</div>
+      <button class="btn btn-primary" onclick="navigate('accounts')">إضافة حساب</button>
+    </div>`;
+    return;
+  }
+  container.innerHTML = allAccounts.slice(0,4).map(acc => `
+    <div class="card-sm" style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="navigate('accounts')">
+      <div class="avatar" style="width:40px;height:40px;font-size:16px;background:${acc.connected?'linear-gradient(135deg,var(--c1),var(--c2))':'var(--bg)'}">
+        ${acc.name[0]}
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px">${acc.name}</div>
+        <div style="font-size:12px;color:var(--muted)">${acc.ai_model==='openai'?'GPT-4o':'Gemini'}</div>
+      </div>
+      <span class="badge ${acc.connected?'badge-green':'badge-gray'}">${acc.connected?'متصل':'منفصل'}</span>
+    </div>
+  `).join('');
+}
+
+// ACCOUNT CRUD
+function openAddAccount() {
+  document.getElementById('account-id').value = '';
+  document.getElementById('account-modal-title').textContent = 'حساب جديد';
+  ['acc-name','acc-gemini','acc-openai'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('acc-model').value = 'gemini';
+  document.getElementById('acc-prompt').value = 'أنت مساعد ذكي ودود. رد بالدارجة المغربية بشكل مختصر ومفيد.';
+  document.getElementById('account-modal').classList.add('open');
+}
+
+function openEditAccount(id) {
+  const acc = allAccounts.find(a => a.id === id);
+  if (!acc) return;
+  document.getElementById('account-id').value = acc.id;
+  document.getElementById('account-modal-title').textContent = 'تعديل الحساب';
+  document.getElementById('acc-name').value = acc.name;
+  document.getElementById('acc-model').value = acc.ai_model;
+  document.getElementById('acc-gemini').value = acc.gemini_key||'';
+  document.getElementById('acc-openai').value = acc.openai_key||'';
+  document.getElementById('acc-prompt').value = acc.system_prompt;
+  document.getElementById('account-modal').classList.add('open');
+}
+
+async function saveAccount() {
+  const id = document.getElementById('account-id').value;
+  const data = {
+    name: document.getElementById('acc-name').value.trim(),
+    ai_model: document.getElementById('acc-model').value,
+    gemini_key: document.getElementById('acc-gemini').value.trim(),
+    openai_key: document.getElementById('acc-openai').value.trim(),
+    system_prompt: document.getElementById('acc-prompt').value.trim()
+  };
+  if (!data.name) { showToast('الاسم مطلوب ⚠️'); return; }
+  
+  // Visual loading state
+  const btn = document.querySelector('#account-modal .btn-primary');
+  const origText = btn.textContent;
+  btn.textContent = '...جاري الحفظ';
+  btn.disabled = true;
+
+  try {
+    let result;
+    if (id) {
+      result = await api(`/api/accounts/${id}`, { method: 'PUT', body: JSON.stringify({ ...data, bot_active: 1 }) });
+    } else {
+      result = await api('/api/accounts', { method: 'POST', body: JSON.stringify(data) });
+    }
+    if (result && (result.success || result.id)) {
+      closeModal('account-modal');
+      showToast('تم الحفظ ✅');
+      await loadAccounts();
+    }
+  } catch(e) {
+    showToast('خطأ في الحفظ: ' + e.message);
+  } finally {
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
+
+async function deleteAccount(id) {
+  if (!confirm('هل تريد حذف هذا الحساب؟')) return;
+  await api(`/api/accounts/${id}`, { method: 'DELETE' });
+  showToast('تم الحذف'); loadAccounts();
+}
+
+// WA CONNECT
+async function connectAccount(id, name) {
+  document.getElementById('qr-title').textContent = `ربط: ${name}`;
+  document.getElementById('qr-loading').style.display = 'block';
+  document.getElementById('qr-display').style.display = 'none';
+  document.getElementById('qr-success').style.display = 'none';
+  document.getElementById('qr-modal').classList.add('open');
+  await api(`/api/accounts/${id}/connect`, { method: 'POST' });
+  if (qrEventSource) qrEventSource.close();
+  qrEventSource = new EventSource(`/api/accounts/${id}/stream`);
+  qrEventSource.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    if (d.type === 'qr') { document.getElementById('qr-loading').style.display='none'; document.getElementById('qr-display').style.display='block'; document.getElementById('qr-img').src=d.qr; }
+    if (d.type === 'connected') { document.getElementById('qr-display').style.display='none'; document.getElementById('qr-success').style.display='block'; qrEventSource.close(); setTimeout(()=>{ closeQRModal(); loadAccounts(); }, 2000); }
+  };
+}
+
+async function disconnectAccount(id) { await api(`/api/accounts/${id}/disconnect`, { method: 'POST' }); showToast('تم قطع الاتصال'); loadAccounts(); }
+function closeQRModal() { document.getElementById('qr-modal').classList.remove('open'); if (qrEventSource) { qrEventSource.close(); qrEventSource=null; } }
+
+// BOT SETTINGS
+function openBotSettings(id) {
+  const acc = allAccounts.find(a => a.id === id);
+  if (!acc) return;
+  document.getElementById('bot-account-id').value = id;
+  document.getElementById('bot-modal-title').textContent = `إعدادات البوت — ${acc.name}`;
+  document.getElementById('bot-active').checked = !!acc.bot_active;
+  document.getElementById('bot-resume').checked = !!acc.resume_mode;
+  document.getElementById('bot-resume-min').value = acc.resume_minutes||30;
+  document.getElementById('bot-prompt').value = acc.system_prompt||'';
+  document.getElementById('bot-blocked').value = (Array.isArray(acc.blocked_numbers)?acc.blocked_numbers:[]).join('\n');
+  document.getElementById('preview-chat').innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;margin:auto">اكتب رسالة للتجربة</div>';
+  document.getElementById('bot-modal').classList.add('open');
+}
+
+async function saveBotSettings() {
+  const id = document.getElementById('bot-account-id').value;
+  const acc = allAccounts.find(a => a.id === id);
+  const blocked = document.getElementById('bot-blocked').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  await api(`/api/accounts/${id}`, { method: 'PUT', body: JSON.stringify({ name:acc.name, ai_model:acc.ai_model, gemini_key:acc.gemini_key, openai_key:acc.openai_key, system_prompt:document.getElementById('bot-prompt').value, bot_active:document.getElementById('bot-active').checked, resume_mode:document.getElementById('bot-resume').checked, resume_minutes:parseInt(document.getElementById('bot-resume-min').value)||30, blocked_numbers:blocked }) });
+  closeModal('bot-modal'); showToast('تم الحفظ ✅'); loadAccounts();
+}
+
+async function sendPreview() {
+  const id = document.getElementById('bot-account-id').value;
+  const msg = document.getElementById('preview-msg').value.trim();
+  if (!msg) return;
+  document.getElementById('preview-msg').value = '';
+  const chatDiv = document.getElementById('preview-chat');
+  chatDiv.innerHTML = `<div class="chat-msg out">${msg}</div>` + chatDiv.innerHTML;
+  chatDiv.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:6px">...</div>` + chatDiv.innerHTML;
+  try {
+    const r = await api(`/api/accounts/${id}/test`, { method: 'POST', body: JSON.stringify({ message: msg }) });
+    chatDiv.innerHTML = chatDiv.innerHTML.replace('<div style="color:var(--muted);font-size:12px;text-align:center;padding:6px">...</div>', '');
+    chatDiv.innerHTML = `<div class="chat-msg in">${r.reply||r.error}</div>` + chatDiv.innerHTML;
+  } catch(e) {
+    chatDiv.innerHTML = chatDiv.innerHTML.replace('<div style="color:var(--muted);font-size:12px;text-align:center;padding:6px">...</div>', '');
+    chatDiv.innerHTML = `<div class="chat-msg in" style="color:#fca5a5">خطأ في الاتصال</div>` + chatDiv.innerHTML;
+  }
+}
+
+// CONVERSATIONS
+function populateConvFilter() {
+  const sel = document.getElementById('conv-account-filter');
+  sel.innerHTML = '<option value="">-- اختر الحساب --</option>' + allAccounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+}
+
+async function loadConversations() {
+  const accountId = document.getElementById('conv-account-filter').value;
+  if (!accountId) return;
+  currentConvAccountId = accountId;
+  const convs = await api(`/api/accounts/${accountId}/conversations`);
+  const list = document.getElementById('conv-list');
+  if (convs.length === 0) { list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">لا توجد محادثات</div>'; return; }
+  list.innerHTML = convs.map(c => {
+    const tagClass = c.label==='hot'?'tag-hot':c.label==='warm'?'tag-warm':c.label==='cold'?'tag-cold':'tag-none';
+    const time = c.last_time ? new Date(c.last_time*1000).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="conv-item" id="conv-${c.id}" onclick="openConversation('${c.id}','${c.chat_id}','${(c.contact_name||c.chat_id).replace(/'/g,"\\'")}','${c.label||'none'}','${accountId}')">
+      <div class="avatar" style="width:36px;height:36px;font-size:14px">${(c.contact_name||c.chat_id)[0]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.contact_name||c.chat_id.replace('@c.us','')}</div>
+        <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.last_message||''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        <div style="font-size:10px;color:var(--muted)">${time}</div>
+        <span class="badge ${tagClass}" style="font-size:9px;padding:2px 6px">${c.label==='hot'?'🔥':c.label==='warm'?'⚡':c.label==='cold'?'❄️':'—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openConversation(convId, chatId, name, label, accountId) {
+  currentConvId = convId; currentConvAccountId = accountId;
+  document.querySelectorAll('.conv-item').forEach(i => i.classList.remove('active'));
+  document.getElementById(`conv-${convId}`)?.classList.add('active');
+  document.getElementById('conv-header').style.display = 'flex';
+  document.getElementById('conv-input').style.display = 'flex';
+  document.getElementById('conv-avatar').textContent = name[0];
+  document.getElementById('conv-name').textContent = name;
+  document.getElementById('conv-phone').textContent = chatId.replace('@c.us','');
+  document.getElementById('conv-label').value = label||'none';
+  document.getElementById('conv-label').dataset.convId = convId;
+  const msgs = await api(`/api/conversations/${convId}/messages`);
+  const div = document.getElementById('conv-messages');
+  if (msgs.length===0) { div.innerHTML='<div style="text-align:center;color:var(--muted);margin:auto;font-size:13px">لا توجد رسائل</div>'; return; }
+  div.innerHTML = msgs.map(m => `<div style="display:flex;justify-content:${m.direction==='out'?'flex-start':'flex-end'}"><div class="chat-msg ${m.direction}">${m.body}</div></div>`).join('');
+  div.scrollTop = div.scrollHeight;
+}
+
+async function updateConvLabel() {
+  const convId = document.getElementById('conv-label').dataset.convId;
+  const label = document.getElementById('conv-label').value;
+  if (!convId) return;
+  await api(`/api/conversations/${convId}/label`, { method: 'PUT', body: JSON.stringify({ label }) });
+  showToast('تم تحديث التصنيف'); loadConversations();
+}
+
+async function sendManual() {
+  const msg = document.getElementById('manual-msg').value.trim();
+  if (!msg || !currentConvId) return;
+  const chatId = document.getElementById('conv-phone').textContent + '@c.us';
+  await api(`/api/accounts/${currentConvAccountId}/send`, { method: 'POST', body: JSON.stringify({ to: chatId, message: msg }) });
+  document.getElementById('manual-msg').value = '';
+  showToast('تم الإرسال ✅');
+  openConversation(currentConvId, chatId, document.getElementById('conv-name').textContent, document.getElementById('conv-label').value, currentConvAccountId);
+}
+
+// KNOWLEDGE
+function populateKBFilter() {
+  const sel = document.getElementById('kb-account-filter');
+  if (sel.options.length <= 1) sel.innerHTML = '<option value="">-- اختر الحساب --</option>' + allAccounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+}
+
+async function loadKnowledge() {
+  const accountId = document.getElementById('kb-account-filter').value;
+  if (!accountId) return;
+  const docs = await api(`/api/accounts/${accountId}/knowledge`);
+  const list = document.getElementById('knowledge-list');
+  if (docs.length===0) { list.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:52px;color:var(--muted)"><div style="font-size:48px;margin-bottom:14px">📚</div><div>لا توجد ملفات بعد</div></div>'; return; }
+  list.innerHTML = docs.map(d => `
+    <div class="card" style="display:flex;align-items:center;gap:12px">
+      <div style="width:42px;height:42px;background:rgba(47,160,132,0.12);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📄</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.title}</div>
+        <div style="font-size:12px;color:var(--muted)">${Math.ceil(d.size/1024)} KB</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteKnowledge('${d.id}','${accountId}')">حذف</button>
+    </div>
+  `).join('');
+}
+
+function openAddKnowledge() {
+  document.getElementById('kb-account-sel').innerHTML = allAccounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+  const cur = document.getElementById('kb-account-filter').value;
+  if (cur) document.getElementById('kb-account-sel').value = cur;
+  document.getElementById('kb-title').value = '';
+  document.getElementById('kb-content').value = '';
+  document.getElementById('knowledge-modal').classList.add('open');
+}
+
+async function saveKnowledge() {
+  const data = { title: document.getElementById('kb-title').value.trim(), content: document.getElementById('kb-content').value.trim() };
+  const accountId = document.getElementById('kb-account-sel').value;
+  if (!data.title||!data.content) { showToast('العنوان والمحتوى مطلوبان'); return; }
+  await api(`/api/accounts/${accountId}/knowledge`, { method: 'POST', body: JSON.stringify(data) });
+  closeModal('knowledge-modal'); showToast('تم الحفظ ✅');
+  document.getElementById('kb-account-filter').value = accountId;
+  loadKnowledge();
+}
+
+async function deleteKnowledge(id, accountId) {
+  if (!confirm('حذف هذا الملف؟')) return;
+  await api(`/api/knowledge/${id}`, { method: 'DELETE' });
+  showToast('تم الحذف'); loadKnowledge();
+}
+
+// ANALYTICS
+function populateAnalyticsFilter() {
+  const sel = document.getElementById('analytics-account');
+  if (sel.options.length <= 1) sel.innerHTML = '<option value="">-- اختر الحساب --</option>' + allAccounts.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');
+}
+
+async function loadAnalytics() {
+  const accountId = document.getElementById('analytics-account').value;
+  if (!accountId) return;
+  const stats = await api(`/api/accounts/${accountId}/stats`);
+  const totalIn = stats.reduce((s,d)=>s+d.msg_in,0), totalOut = stats.reduce((s,d)=>s+d.msg_out,0), totalTokens = stats.reduce((s,d)=>s+d.tokens,0);
+  document.getElementById('analytics-stats').innerHTML = `
+    <div class="stat-card c1"><div style="font-size:11px;color:var(--muted);margin-bottom:8px">رسائل واردة</div><div style="font-size:30px;font-weight:900;color:var(--c3);font-family:'Space Mono',monospace">${totalIn.toLocaleString()}</div></div>
+    <div class="stat-card c2"><div style="font-size:11px;color:var(--muted);margin-bottom:8px">ردود البوت</div><div style="font-size:30px;font-weight:900;color:#6FCF97;font-family:'Space Mono',monospace">${totalOut.toLocaleString()}</div></div>
+    <div class="stat-card c4"><div style="font-size:11px;color:var(--muted);margin-bottom:8px">التوكن</div><div style="font-size:30px;font-weight:900;color:#fcd34d;font-family:'Space Mono',monospace">${totalTokens.toLocaleString()}</div></div>
+  `;
+  if (messagesChart) messagesChart.destroy();
+  const ctx = document.getElementById('messages-chart').getContext('2d');
+  messagesChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: stats.map(d=>d.date.substring(5)),
+      datasets: [
+        { label: 'واردة', data: stats.map(d=>d.msg_in), backgroundColor: 'rgba(31,111,95,0.7)', borderRadius: 6 },
+        { label: 'صادرة', data: stats.map(d=>d.msg_out), backgroundColor: 'rgba(111,207,151,0.7)', borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#7aada1', font: { family: 'Cairo' } } } },
+      scales: {
+        x: { grid: { color: 'rgba(47,160,132,0.08)' }, ticks: { color: '#7aada1' } },
+        y: { grid: { color: 'rgba(47,160,132,0.08)' }, ticks: { color: '#7aada1' } }
+      }
+    }
+  });
+}
+
+// SETTINGS
+async function loadSettings() {
+  const s = await api('/api/settings');
+  document.getElementById('default-gemini').value = s.default_gemini_key||'';
+  document.getElementById('default-openai').value = s.default_openai_key||'';
+}
+
+async function saveSettings() {
+  await api('/api/settings', { method: 'PUT', body: JSON.stringify({ default_gemini_key: document.getElementById('default-gemini').value, default_openai_key: document.getElementById('default-openai').value }) });
+  showToast('تم الحفظ ✅');
+}
+
+// UTILS
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>
